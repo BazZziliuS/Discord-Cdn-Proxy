@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request, Response, Query, UploadFile, File
 from fastapi.responses import JSONResponse, RedirectResponse
 from datetime import datetime
+import datetime as dt
 from urllib.parse import urlparse, parse_qs
 import os
 import aiohttp
@@ -25,7 +26,7 @@ HEARTBEAT = "heartbeat"
 
 # Статистика работы приложения
 stats = {
-    "started": datetime.utcnow(),
+    "started": datetime.now(dt.timezone.utc),
     "calls": 0,
     "original": 0,
     "refreshed": 0,
