@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "discord cdn proxy"
+version = "0.1.0"
+description = ""
+authors = ["BazZziliuS <bazzzil123@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "^0.115.6"
+cachetools = "^5.5.0"
+aiohttp = "^3.11.11"
+uvicorn = "^0.34.0"
+python-multipart = "^0.0.20"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
