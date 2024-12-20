@@ -96,7 +96,11 @@ async def refresh_url(url: str = Query(..., description="Discord CDN URL")):
         expires = datetime.fromtimestamp(int(params["ex"][0], 16))
         if expires > datetime.utcnow():
             stats["original"] += 1
-            return create_redirect_response(url, expires, "original")
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as image_response:
+                    if image_response.status == 200:
+                        content = await image_response.read()
+                        return Response(content=content, media_type="image/png")
 
     file_name = os.path.basename(parsed_url.path)
 
@@ -104,10 +108,11 @@ async def refresh_url(url: str = Query(..., description="Discord CDN URL")):
     cached_url = cache.get(file_name)
     if cached_url and cached_url["expires"] > datetime.utcnow():
         stats["memory"] += 1
-        response_content = {"url": cached_url["href"]}
-        if settings.dev_mode:
-            response_content["cached"] = True
-        return JSONResponse(content=response_content, status_code=200)
+        async with aiohttp.ClientSession() as session:
+            async with session.get(cached_url["href"]) as image_response:
+                if image_response.status == 200:
+                    content = await image_response.read()
+                    return Response(content=content, media_type="image/png")
 
     payload = {"attachment_urls": [url]}
     headers = {
@@ -147,10 +152,11 @@ async def refresh_url(url: str = Query(..., description="Discord CDN URL")):
         cache[file_name] = {"href": refreshed_url, "expires": expires}
         stats["refreshed"] += 1
 
-        return JSONResponse(
-            content={"url": refreshed_url},
-            status_code=200
-        )
+        async with aiohttp.ClientSession() as session:
+            async with session.get(refreshed_url) as image_response:
+                if image_response.status == 200:
+                    content = await image_response.read()
+                    return Response(content=content, media_type="image/png")
 
     return JSONResponse(
         content={"message": "Unexpected response from Discord API."},
