@@ -8,7 +8,7 @@ from cachetools import TTLCache
 from pydantic import BaseModel
 
 class Settings(BaseModel):
-    # Настройки приложения
+    """ Класс для хранения настроек приложения, таких как токен Discord и ID канала """
     discord_token: str = 'Bot ' + os.getenv("DISCORD_TOKEN", "MTMxOTc4MjI5OTg4MDkxOTExMg.Gqsf55.3znKwQDx71wbjkAi9VQIc-ZP2Vid2IKm9l-F1E")
     port: int = int(os.getenv("PORT", 8000))
     default_channel_id: str = "1319786706177884232"
@@ -36,7 +36,7 @@ stats = {
 }
 
 def parse_valid_url(url: str):
-    # Проверка корректности URL
+    """ Проверка корректности URL """
     try:
         return urlparse(url)
     except Exception:
@@ -44,7 +44,7 @@ def parse_valid_url(url: str):
 
 @app.options("/")
 async def handle_options(request: Request):
-    # Обработка CORS для OPTIONS-запросов
+    """ Обработка CORS для OPTIONS-запросов """
     origin = request.headers.get("origin", "*")
     headers = {
         "Access-Control-Allow-Origin": origin,
@@ -55,12 +55,12 @@ async def handle_options(request: Request):
     return Response(status_code=204, headers=headers)
 
 def add_cors_headers(response: Response, origin: str = "*"):
-    # Добавление заголовков CORS в ответ
+    """ Добавление заголовков CORS в ответ """
     response.headers["Access-Control-Allow-Origin"] = origin
     return response
 
 def create_redirect_response(href: str, expires: datetime, custom: str):
-    # Создание редиректа на указанный URL
+    """ Создание редиректа на указанный URL """
     response = RedirectResponse(href)
     response.headers["Expires"] = expires.strftime("%a, %d %b %Y %H:%M:%S GMT")
     response.headers["x-discord-cdn-proxy"] = custom
@@ -68,7 +68,7 @@ def create_redirect_response(href: str, expires: datetime, custom: str):
 
 @app.get("/")
 async def refresh_url(url: str = Query(..., description="Discord CDN URL")):
-    # Обновление вложения Discord
+    """ Обновление вложения Discord """
     stats["calls"] += 1
 
     if not settings.discord_token:
@@ -165,7 +165,7 @@ async def refresh_url(url: str = Query(..., description="Discord CDN URL")):
 
 @app.post("/upload/")
 async def upload_image(file: UploadFile = File(...)):
-    # Загрузка изображения в канал Discord (использует ID канала из настроек)
+    """ Загрузка изображения в канал Discord (использует ID канала из настроек) """
     headers = {
         "Authorization": settings.discord_token
     }
