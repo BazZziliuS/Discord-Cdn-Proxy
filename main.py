@@ -9,9 +9,9 @@ from pydantic import BaseModel
 
 class Settings(BaseModel):
     """ Класс для хранения настроек приложения, таких как токен Discord и ID канала """
-    discord_token: str = 'Bot ' + os.getenv("DISCORD_TOKEN", "MTMxOTc4MjI5OTg4MDkxOTExMg.Gqsf55.3znKwQDx71wbjkAi9VQIc-ZP2Vid2IKm9l-F1E")
+    discord_token: str = 'Bot ' + os.getenv("DISCORD_TOKEN", "")
     port: int = int(os.getenv("PORT", 8000))
-    default_channel_id: str = "1319786706177884232"
+    default_channel_id: str = ""
     dev_mode: bool = os.getenv("DEV_MODE", "false").lower() == "true"
 
 settings = Settings()
@@ -97,10 +97,13 @@ async def refresh_url(url: str = Query(..., description="Discord CDN URL")):
         if expires > datetime.utcnow():
             stats["original"] += 1
             async with aiohttp.ClientSession() as session:
-                async with session.get(url) as image_response:
-                    if image_response.status == 200:
-                        content = await image_response.read()
-                        return Response(content=content, media_type="image/png")
+                async with session.get(url) as file_response:
+                    if file_response.status == 200:
+                        content = await file_response.read()
+                        content_type = file_response.headers.get("Content-Type", "application/octet-stream")
+                        if content_type.startswith("image") or content_type.startswith("video") or content_type.startswith("audio"):
+                            return Response(content=content, media_type=content_type)
+                        return Response(content=content, media_type=content_type, headers={"Content-Disposition": f"attachment; filename={os.path.basename(parsed_url.path)}"})
 
     file_name = os.path.basename(parsed_url.path)
 
@@ -109,10 +112,13 @@ async def refresh_url(url: str = Query(..., description="Discord CDN URL")):
     if cached_url and cached_url["expires"] > datetime.utcnow():
         stats["memory"] += 1
         async with aiohttp.ClientSession() as session:
-            async with session.get(cached_url["href"]) as image_response:
-                if image_response.status == 200:
-                    content = await image_response.read()
-                    return Response(content=content, media_type="image/png")
+            async with session.get(cached_url["href"]) as file_response:
+                if file_response.status == 200:
+                    content = await file_response.read()
+                    content_type = file_response.headers.get("Content-Type", "application/octet-stream")
+                    if content_type.startswith("image") or content_type.startswith("video") or content_type.startswith("audio"):
+                        return Response(content=content, media_type=content_type)
+                    return Response(content=content, media_type=content_type, headers={"Content-Disposition": f"attachment; filename={file_name}"})
 
     payload = {"attachment_urls": [url]}
     headers = {
@@ -153,10 +159,13 @@ async def refresh_url(url: str = Query(..., description="Discord CDN URL")):
         stats["refreshed"] += 1
 
         async with aiohttp.ClientSession() as session:
-            async with session.get(refreshed_url) as image_response:
-                if image_response.status == 200:
-                    content = await image_response.read()
-                    return Response(content=content, media_type="image/png")
+            async with session.get(refreshed_url) as file_response:
+                if file_response.status == 200:
+                    content = await file_response.read()
+                    content_type = file_response.headers.get("Content-Type", "application/octet-stream")
+                    if content_type.startswith("image") or content_type.startswith("video") or content_type.startswith("audio"):
+                        return Response(content=content, media_type=content_type)
+                    return Response(content=content, media_type=content_type, headers={"Content-Disposition": f"attachment; filename={file_name}"})
 
     return JSONResponse(
         content={"message": "Unexpected response from Discord API."},
@@ -216,3 +225,4 @@ async def upload_image(file: UploadFile = File(...)):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=settings.port)
+
